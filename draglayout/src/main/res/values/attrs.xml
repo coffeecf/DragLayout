@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="DragLayout">
+        <attr name="mode" format="enum">
+            <enum name="RIGHT_DRAW_TO_SHOW" value="0"></enum>
+            <enum name="LEFT_DRAW_TO_SHOW" value="1"></enum>
+            <enum name="RIGHT_DRAW_TO_LEAVE" value="2"></enum>
+            <enum name="RIGHT_LEAVE_AND_LEFT_SHOW" value="3"></enum>
+        </attr>
+    </declare-styleable>
+</resources>
