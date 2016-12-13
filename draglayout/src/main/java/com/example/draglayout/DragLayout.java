@@ -8,7 +8,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.support.v4.view.GestureDetectorCompat;
@@ -18,10 +17,7 @@ import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 
 public class DragLayout extends FrameLayout {
@@ -30,36 +26,27 @@ public class DragLayout extends FrameLayout {
     public static final int RIGHT_DRAW_TO_LEAVE = 2;
     public static final int RIGHT_LEAVE_AND_LEFT_SHOW = 3;
 
-    private static final int DEFAULT_MODE = RIGHT_DRAW_TO_SHOW;
-    private int mode;
-
-    private boolean hasBackground = true;
-
+    private int mode = RIGHT_DRAW_TO_SHOW;
+    private boolean hasBackground = true; //只用于右滑退出
     private boolean canDrag = true;
+    private Status status = Status.Close;
 
-    private Drawable background;
+    private Drawable backupBackground; //只用于左显右退
     private GestureDetectorCompat gestureDetector;
     private ViewDragHelper dragHelper;
     private DragListener dragListener;
-    private int range;
-    private int width;
-    private int height;
-    private int mainLeft;
-    private int mainRight;
+    private int range; //表示释放后是执行还是取消的距离
     private Context context;
-    private ImageView iv_shadow;
-    private LinearLayout vg_back;
-    private MyLinearLayout vg_main;
-    private Status status = Status.Close;
+
     private ViewDragHelper.Callback dragHelperCallback = new ViewDragHelper.Callback() {
 
         @Override
         public int clampViewPositionHorizontal(View child, int back, int dx) {
             switch (mode) {
                 case RIGHT_DRAW_TO_SHOW:
-                    if (mainLeft + dx < 0) {
+                    if (MainView.left + dx < 0) {
                         return 0;
-                    } else if (mainLeft + dx > range) {
+                    } else if (MainView.left + dx > range) {
                         return range;
                     } else {
                         return back;
@@ -92,12 +79,12 @@ public class DragLayout extends FrameLayout {
 
         @Override
         public boolean tryCaptureView(View child, int pointerId) {
-            return child == vg_main && canDrag;
+            return child == MainView.view && canDrag;
         }
 
         @Override
         public int getViewHorizontalDragRange(View child) {
-            return width;
+            return MainView.width;
         }
 
         @Override
@@ -108,7 +95,7 @@ public class DragLayout extends FrameLayout {
                     open();
                 } else if (xvel < 0) {
                     close();
-                } else if (mainRight > width * 1.2) {
+                } else if (MainView.right > MainView.width * 1.2) {
                     open();
                 } else {
                     close();
@@ -118,7 +105,7 @@ public class DragLayout extends FrameLayout {
                     close();
                 } else if (xvel < 0) {
                     open();
-                } else if (mainRight < width * 0.7) {
+                } else if (MainView.right < MainView.width * 0.7) {
                     open();
                 } else {
                     close();
@@ -128,7 +115,7 @@ public class DragLayout extends FrameLayout {
                     activityExit();
                 } else if (xvel < 0) {
                     close();
-                } else if (mainRight > width * 1.2) {
+                } else if (MainView.right > MainView.width * 1.2) {
                     activityExit();
                 } else {
                     close();
@@ -141,14 +128,14 @@ public class DragLayout extends FrameLayout {
                         close();
                     }
                 } else if (xvel < 0) {
-                    if (mainLeft >= 0) {
+                    if (MainView.left >= 0) {
                         close();
                     } else {
                         open();
                     }
-                } else if (mainRight > width * 1.3) {
+                } else if (MainView.right > MainView.width * 1.3) {
                     activityExit();
-                } else if (mainRight < width * 0.7) {
+                } else if (MainView.right < MainView.width * 0.7) {
                     open();
                 } else {
                     close();
@@ -160,16 +147,15 @@ public class DragLayout extends FrameLayout {
         @Override
         public void onViewPositionChanged(View changedView, int back, int top,
                                           int dx, int dy) {
-            mainLeft = back;
-            mainRight = width + back;
-            if (mode != RIGHT_DRAW_TO_LEAVE) {
-                iv_shadow.layout(mainLeft, 0, mainLeft + width, height);
-                if (changedView == vg_back) {
-                    vg_back.layout(0, 0, width, height);
-                    vg_main.layout(mainLeft, 0, mainLeft + width, height);
+            MainView.left = back;
+            MainView.right = back + MainView.width;
+
+                if (changedView == BackView.view) {
+                    BackView.view.layout(0, 0, MainView.width, MainView.height);
+                    MainView.view.layout(MainView.left, 0, MainView.left + MainView.width, MainView.height);
                 }
-            }
-            dispatchDragEvent(mainLeft);
+
+            dispatchDragEvent(MainView.left);
         }
     };
 
@@ -188,10 +174,8 @@ public class DragLayout extends FrameLayout {
         dragHelper = ViewDragHelper.create(this, dragHelperCallback);
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.DragLayout);
         if (typedArray != null) {
-            mode = typedArray.getInteger(R.styleable.DragLayout_mode, DEFAULT_MODE);
+            mode = typedArray.getInteger(R.styleable.DragLayout_mode, RIGHT_DRAW_TO_SHOW);
             typedArray.recycle();
-        } else {
-            mode = DEFAULT_MODE;
         }
     }
 
@@ -203,16 +187,16 @@ public class DragLayout extends FrameLayout {
                 animateRightShow(percent);
                 break;
             case LEFT_DRAW_TO_SHOW:
-                i = i + width;
-                percent = 1 - (i - (width + range)) / (float) -range;
+                i = i + MainView.width;
+                percent = 1 - (i - (MainView.width + range)) / (float) -range;
                 animateLeftShow(percent);
                 break;
             case RIGHT_DRAW_TO_LEAVE:
-                percent = i / (float) width;
+                percent = i / (float) MainView.width;
                 animateRightLeave(percent);
                 break;
             case RIGHT_LEAVE_AND_LEFT_SHOW:
-                percent = i / (float) width;
+                percent = i / (float) MainView.width;
                 animateLShowRLeave(percent);
         }
         if (dragListener == null) {
@@ -227,58 +211,39 @@ public class DragLayout extends FrameLayout {
         }
     }
 
-    public void setDragListener(DragListener dragListener) {
-        this.dragListener = dragListener;
-    }
 
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
         if (mode != RIGHT_DRAW_TO_LEAVE) {
-            iv_shadow = new ImageView(context);
-            iv_shadow.setImageResource(R.drawable.shadow);
-            LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
-            addView(iv_shadow, 1, lp);
-            vg_back = (LinearLayout) getChildAt(0);
-            vg_main = (MyLinearLayout) getChildAt(2);
-            vg_back.setClickable(true);
+            BackView.view = getChildAt(0);
+            MainView.view = (BackLinearLayout) getChildAt(1);
+            BackView.view.setClickable(true);
 
         } else {//表示mode == RIGHT_DRAW_TO_LEAVE
-            vg_main = (MyLinearLayout) getChildAt(0);
+            MainView.view = (BackLinearLayout) getChildAt(0);
             setBackgroundColor(Color.BLACK);
-            Activity activity = (Activity) context;
-            activity.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            activity.getWindow().getDecorView().setBackground(null);
+            setActivityBackgroundTransparent();
         }
+        MainView.view.setClickable(true);
 
         if (mode == RIGHT_LEAVE_AND_LEFT_SHOW) {
-            background = getBackground();
-            Activity activity = (Activity) context;
-            activity.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            activity.getWindow().getDecorView().setBackground(null);
+            backupBackground = getBackground();
+            setActivityBackgroundTransparent();
         }
-
-        vg_main.setDragLayout(this);
-        vg_main.setClickable(true);
     }
 
-    public ViewGroup getVg_main() {
-        return vg_main;
-    }
 
-    public ViewGroup getVg_back() {
-        return vg_back;
-    }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        width = vg_main.getMeasuredWidth();
-        height = vg_main.getMeasuredHeight();
+        MainView.width = MainView.view.getMeasuredWidth();
+        MainView.height = MainView.view.getMeasuredHeight();
         if (mode == RIGHT_DRAW_TO_SHOW) {
-            range = (int) (width * 0.6f);
+            range = (int) (MainView.width * 0.6f);
         } else {
-            range = (int) -(width * 0.65f);
+            range = (int) -(MainView.width * 0.65f);
         }
 
 
@@ -286,10 +251,10 @@ public class DragLayout extends FrameLayout {
 
     @Override
     protected void onLayout(boolean changed, int back, int top, int right, int bottom) {
-        if (vg_back != null) {
-            vg_back.layout(0, 0, width, height);
+        if (BackView.view != null) {
+            BackView.view.layout(0, 0, MainView.width, MainView.height);
         }
-        vg_main.layout(mainLeft, 0, mainLeft + width, height);
+        MainView.view.layout(MainView.left, 0, MainView.left + MainView.width, MainView.height);
     }
 
     @Override
@@ -314,11 +279,11 @@ public class DragLayout extends FrameLayout {
         }
     }
 
-    class YScrollDetector extends GestureDetector.SimpleOnGestureListener {
-        @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float dx, float dy) {
-            return Math.abs(dy) <= Math.abs(dx);
-        }
+
+    private void setActivityBackgroundTransparent(){
+        Activity activity = (Activity) context;
+        activity.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        activity.getWindow().getDecorView().setBackground(null);
     }
 
 
@@ -327,19 +292,17 @@ public class DragLayout extends FrameLayout {
      */
     private void animateRightShow(float percent) {
         float f1 = 1 - percent * 0.3f;
-        vg_main.setScaleX(f1);
-        vg_main.setScaleY(f1);
-        vg_back.setTranslationX(-vg_back.getWidth() / 2.3f + vg_back.getWidth() / 2.3f * percent);
-        vg_back.setScaleX(0.5f + 0.5f * percent);
-        vg_back.setScaleY(0.5f + 0.5f * percent);
-        vg_back.setAlpha(percent);
-        iv_shadow.setScaleX(f1 * 1.4f * (1 - percent * 0.12f));
-        iv_shadow.setScaleY(f1 * 1.85f * (1 - percent * 0.12f));
+        MainView.view.setScaleX(f1);
+        MainView.view.setScaleY(f1);
+        BackView.view.setTranslationX(-BackView.view.getWidth() / 2.3f + BackView.view.getWidth() / 2.3f * percent);
+        BackView.view.setScaleX(0.5f + 0.5f * percent);
+        BackView.view.setScaleY(0.5f + 0.5f * percent);
+        BackView.view.setAlpha(percent);
 
     }
 
     private void animateLeftShow(float percent) {
-        vg_back.setTranslationX(-width / 6.0f * percent + width / 6.0f);
+        BackView.view.setTranslationX(-MainView.width / 6.0f * percent + MainView.width / 6.0f);
     }
 
     private void animateRightLeave(float percent) {
@@ -352,29 +315,32 @@ public class DragLayout extends FrameLayout {
             if (hasBackground) {
                 hasBackground = false;
                 setBackgroundColor(Color.BLACK);
-                vg_back.setVisibility(INVISIBLE);
+                BackView.view.setVisibility(INVISIBLE);
             }
             int i = (int) ((1 - percent) * 100);
             getBackground().setAlpha(i);
         } else {
             if (!hasBackground) {
                 hasBackground = true;
-                setBackground(background);
-                vg_back.setVisibility(VISIBLE);
+                setBackground(backupBackground);
+                BackView.view.setVisibility(VISIBLE);
             }
-            vg_back.setTranslationX(width / 6.0f * percent + width / 6.0f);
+            BackView.view.setTranslationX(MainView.width / 6.0f * percent + MainView.width / 6.0f);
         }
 
     }
 
-
     /**
      * 公开外边调用的方法↓
      */
+    public void setDragListener(DragListener dragListener) {
+        this.dragListener = dragListener;
+    }
+
     public Status getStatus() {
-        if (mainRight == width || mainLeft == 0) {
+        if (MainView.right == MainView.width || MainView.left == 0) {
             status = Status.Close;
-        } else if (mainLeft == range || mainRight - range == width) {
+        } else if (MainView.left == range || MainView.right - range == MainView.width) {
             status = Status.Open;
         } else {
             status = Status.Drag;
@@ -395,11 +361,11 @@ public class DragLayout extends FrameLayout {
 
     public void open(boolean animate) {
         if (animate) {
-            if (dragHelper.smoothSlideViewTo(vg_main, range, 0)) {
+            if (dragHelper.smoothSlideViewTo(MainView.view, range, 0)) {
                 ViewCompat.postInvalidateOnAnimation(this);
             }
         } else {
-            vg_main.layout(range, 0, range * 2, height);
+            MainView.view.layout(range, 0, range * 2, MainView.height);
             dispatchDragEvent(range);
         }
     }
@@ -410,11 +376,11 @@ public class DragLayout extends FrameLayout {
 
     public void close(boolean animate) {
         if (animate) {
-            if (dragHelper.smoothSlideViewTo(vg_main, 0, 0)) {
+            if (dragHelper.smoothSlideViewTo(MainView.view, 0, 0)) {
                 ViewCompat.postInvalidateOnAnimation(this);
             }
         } else {
-            vg_main.layout(0, 0, width, height);
+            MainView.view.layout(0, 0, MainView.width, MainView.height);
             dispatchDragEvent(0);
         }
     }
@@ -439,16 +405,23 @@ public class DragLayout extends FrameLayout {
     /**
      * 数据的内部类↓
      */
-    private class MainView {
-        public View view;
-        public int width;
-        public int mainLeft;
-        public int mainRight;
+    private static class MainView {
+        static public View view;
+        static public int width;
+        static public int height;
+        static public int left;
+        static public int right;
     }
-    private class BackView {
-        public View view;
-        public int width;
-        public int mainLeft;
-        public int mainRight;
+    private static class BackView {
+        static public View view;
     }
+
+
+    class YScrollDetector extends GestureDetector.SimpleOnGestureListener {
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2, float dx, float dy) {
+            return Math.abs(dy) <= Math.abs(dx);
+        }
+    }
+
 }
