@@ -9,18 +9,18 @@ import android.widget.RelativeLayout;
  * Created by Administrator on 2016/12/13.
  */
 
-public class BackRelativeLayout extends RelativeLayout {
+public class FrontRelativeLayout extends RelativeLayout {
     private DragLayout dl;
 
-    public BackRelativeLayout(Context context) {
+    public FrontRelativeLayout(Context context) {
         super(context);
     }
 
-    public BackRelativeLayout(Context context, AttributeSet attrs) {
+    public FrontRelativeLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public BackRelativeLayout(Context context, AttributeSet attrs, int defStyleAttr) {
+    public FrontRelativeLayout(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 

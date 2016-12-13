@@ -3,31 +3,32 @@ package com.example.draglayout;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 
 /**
- * Created by Administrator on 2016/12/13.
+ * Created by Administrator on 2016/9/30.
  */
 
-public class BackFrameLayout extends FrameLayout {
+public class FrontLinearLayout extends LinearLayout {
+
     private DragLayout dl;
 
-    public BackFrameLayout(Context context) {
+    public FrontLinearLayout(Context context) {
         super(context);
     }
 
-    public BackFrameLayout(Context context, AttributeSet attrs) {
+    public FrontLinearLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public BackFrameLayout(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
+    public FrontLinearLayout(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
     }
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent event) {
-        if (dl == null) {
-            dl = (DragLayout) this.getParent();
+        if (dl == null){
+            dl = (DragLayout)this.getParent();
         }
         return dl.getStatus() != DragLayout.Status.Close || super.onInterceptTouchEvent(event);
     }
@@ -42,4 +43,8 @@ public class BackFrameLayout extends FrameLayout {
         }
         return super.onTouchEvent(event);
     }
+
+
 }
+
+

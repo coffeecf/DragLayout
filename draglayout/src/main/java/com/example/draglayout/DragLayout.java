@@ -39,11 +39,11 @@ public class DragLayout extends FrameLayout {
     private Context context;
 
     private View backView;
-    private View mainView;
-    private int mainViewWidth;
-    private int mainViewHeight;
-    private int mainViewLeft;
-    private int mainViewRight;
+    private View frontView;
+    private int frontViewWidth;
+    private int frontViewHeight;
+    private int frontViewLeft;
+    private int frontViewRight;
 
     private ViewDragHelper.Callback dragHelperCallback = new ViewDragHelper.Callback() {
 
@@ -51,9 +51,9 @@ public class DragLayout extends FrameLayout {
         public int clampViewPositionHorizontal(View child, int back, int dx) {
             switch (mode) {
                 case RIGHT_DRAW_TO_SHOW:
-                    if (mainViewLeft + dx < 0) {
+                    if (frontViewLeft + dx < 0) {
                         return 0;
-                    } else if (mainViewLeft + dx > range) {
+                    } else if (frontViewLeft + dx > range) {
                         return range;
                     } else {
                         return back;
@@ -86,12 +86,12 @@ public class DragLayout extends FrameLayout {
 
         @Override
         public boolean tryCaptureView(View child, int pointerId) {
-            return child == mainView && canDrag;
+            return child == frontView && canDrag;
         }
 
         @Override
         public int getViewHorizontalDragRange(View child) {
-            return mainViewWidth;
+            return frontViewWidth;
         }
 
         @Override
@@ -102,7 +102,7 @@ public class DragLayout extends FrameLayout {
                     open();
                 } else if (xvel < 0) {
                     close();
-                } else if (mainViewHeight > mainViewWidth * 1.2) {
+                } else if (frontViewHeight > frontViewWidth * 1.2) {
                     open();
                 } else {
                     close();
@@ -112,7 +112,7 @@ public class DragLayout extends FrameLayout {
                     close();
                 } else if (xvel < 0) {
                     open();
-                } else if (mainViewHeight < mainViewWidth * 0.7) {
+                } else if (frontViewHeight < frontViewWidth * 0.7) {
                     open();
                 } else {
                     close();
@@ -122,7 +122,7 @@ public class DragLayout extends FrameLayout {
                     activityExit();
                 } else if (xvel < 0) {
                     close();
-                } else if (mainViewHeight > mainViewWidth * 1.2) {
+                } else if (frontViewHeight > frontViewWidth * 1.2) {
                     activityExit();
                 } else {
                     close();
@@ -135,14 +135,14 @@ public class DragLayout extends FrameLayout {
                         close();
                     }
                 } else if (xvel < 0) {
-                    if (mainViewLeft >= 0) {
+                    if (frontViewLeft >= 0) {
                         close();
                     } else {
                         open();
                     }
-                } else if (mainViewHeight > mainViewWidth * 1.3) {
+                } else if (frontViewHeight > frontViewWidth * 1.3) {
                     activityExit();
-                } else if (mainViewHeight < mainViewWidth * 0.7) {
+                } else if (frontViewHeight < frontViewWidth * 0.7) {
                     open();
                 } else {
                     close();
@@ -154,15 +154,15 @@ public class DragLayout extends FrameLayout {
         @Override
         public void onViewPositionChanged(View changedView, int back, int top,
                                           int dx, int dy) {
-            mainViewLeft = back;
-            mainViewHeight = back + mainViewWidth;
+            frontViewLeft = back;
+            frontViewHeight = back + frontViewWidth;
 
             if (changedView == backView) {
-                backView.layout(0, 0, mainViewWidth, mainViewRight);
-                mainView.layout(mainViewLeft, 0, mainViewLeft + mainViewWidth, mainViewRight);
+                backView.layout(0, 0, frontViewWidth, frontViewRight);
+                frontView.layout(frontViewLeft, 0, frontViewLeft + frontViewWidth, frontViewRight);
                 }
 
-            dispatchDragEvent(mainViewLeft);
+            dispatchDragEvent(frontViewLeft);
         }
     };
 
@@ -194,16 +194,16 @@ public class DragLayout extends FrameLayout {
                 animateRightShow(percent);
                 break;
             case LEFT_DRAW_TO_SHOW:
-                i = i + mainViewWidth;
-                percent = 1 - (i - (mainViewWidth + range)) / (float) -range;
+                i = i + frontViewWidth;
+                percent = 1 - (i - (frontViewWidth + range)) / (float) -range;
                 animateLeftShow(percent);
                 break;
             case RIGHT_DRAW_TO_LEAVE:
-                percent = i / (float) mainViewWidth;
+                percent = i / (float) frontViewWidth;
                 animateRightLeave(percent);
                 break;
             case RIGHT_LEAVE_AND_LEFT_SHOW:
-                percent = i / (float) mainViewWidth;
+                percent = i / (float) frontViewWidth;
                 animateLShowRLeave(percent);
         }
         if (dragListener == null) {
@@ -224,15 +224,15 @@ public class DragLayout extends FrameLayout {
         super.onFinishInflate();
         if (mode != RIGHT_DRAW_TO_LEAVE) {
             backView = getChildAt(0);
-            mainView = getChildAt(1);
+            frontView = getChildAt(1);
             backView.setClickable(true);
 
         } else {//表示mode == RIGHT_DRAW_TO_LEAVE
-            mainView = getChildAt(0);
+            frontView = getChildAt(0);
             setBackgroundColor(Color.BLACK);
             setActivityBackgroundTransparent();
         }
-        mainView.setClickable(true);
+        frontView.setClickable(true);
 
         if (mode == RIGHT_LEAVE_AND_LEFT_SHOW) {
             backupBackground = getBackground();
@@ -245,12 +245,12 @@ public class DragLayout extends FrameLayout {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        mainViewWidth = mainView.getMeasuredWidth();
-        mainViewRight = mainView.getMeasuredHeight();
+        frontViewWidth = frontView.getMeasuredWidth();
+        frontViewRight = frontView.getMeasuredHeight();
         if (mode == RIGHT_DRAW_TO_SHOW) {
-            range = (int) (mainViewWidth * 0.6f);
+            range = (int) (frontViewWidth * 0.6f);
         } else {
-            range = (int) -(mainViewWidth * 0.65f);
+            range = (int) -(frontViewWidth * 0.65f);
         }
 
 
@@ -259,9 +259,9 @@ public class DragLayout extends FrameLayout {
     @Override
     protected void onLayout(boolean changed, int back, int top, int right, int bottom) {
         if (backView != null) {
-            backView.layout(0, 0, mainViewWidth, mainViewRight);
+            backView.layout(0, 0, frontViewWidth, frontViewRight);
         }
-        mainView.layout(mainViewLeft, 0, mainViewLeft + mainViewWidth, mainViewRight);
+        frontView.layout(frontViewLeft, 0, frontViewLeft + frontViewWidth, frontViewRight);
     }
 
     @Override
@@ -299,8 +299,8 @@ public class DragLayout extends FrameLayout {
      */
     private void animateRightShow(float percent) {
         float f1 = 1 - percent * 0.3f;
-        mainView.setScaleX(f1);
-        mainView.setScaleY(f1);
+        frontView.setScaleX(f1);
+        frontView.setScaleY(f1);
         backView.setTranslationX(-backView.getWidth() / 2.3f + backView.getWidth() / 2.3f * percent);
         backView.setScaleX(0.5f + 0.5f * percent);
         backView.setScaleY(0.5f + 0.5f * percent);
@@ -309,7 +309,7 @@ public class DragLayout extends FrameLayout {
     }
 
     private void animateLeftShow(float percent) {
-        backView.setTranslationX(-mainViewWidth / 6.0f * percent + mainViewWidth / 6.0f);
+        backView.setTranslationX(-frontViewWidth / 6.0f * percent + frontViewWidth / 6.0f);
     }
 
     private void animateRightLeave(float percent) {
@@ -332,7 +332,7 @@ public class DragLayout extends FrameLayout {
                 setBackground(backupBackground);
                 backView.setVisibility(VISIBLE);
             }
-            backView.setTranslationX(mainViewWidth / 6.0f * percent + mainViewWidth / 6.0f);
+            backView.setTranslationX(frontViewWidth / 6.0f * percent + frontViewWidth / 6.0f);
         }
 
     }
@@ -345,9 +345,9 @@ public class DragLayout extends FrameLayout {
     }
 
     public Status getStatus() {
-        if (mainViewHeight == mainViewWidth || mainViewLeft == 0) {
+        if (frontViewHeight == frontViewWidth || frontViewLeft == 0) {
             status = Status.Close;
-        } else if (mainViewLeft == range || mainViewHeight - range == mainViewWidth) {
+        } else if (frontViewLeft == range || frontViewHeight - range == frontViewWidth) {
             status = Status.Open;
         } else {
             status = Status.Drag;
@@ -368,11 +368,11 @@ public class DragLayout extends FrameLayout {
 
     public void open(boolean animate) {
         if (animate) {
-            if (dragHelper.smoothSlideViewTo(mainView, range, 0)) {
+            if (dragHelper.smoothSlideViewTo(frontView, range, 0)) {
                 ViewCompat.postInvalidateOnAnimation(this);
             }
         } else {
-            mainView.layout(range, 0, range * 2, mainViewRight);
+            frontView.layout(range, 0, range * 2, frontViewRight);
             dispatchDragEvent(range);
         }
     }
@@ -383,11 +383,11 @@ public class DragLayout extends FrameLayout {
 
     public void close(boolean animate) {
         if (animate) {
-            if (dragHelper.smoothSlideViewTo(mainView, 0, 0)) {
+            if (dragHelper.smoothSlideViewTo(frontView, 0, 0)) {
                 ViewCompat.postInvalidateOnAnimation(this);
             }
         } else {
-            mainView.layout(0, 0, mainViewWidth, mainViewRight);
+            frontView.layout(0, 0, frontViewWidth, frontViewRight);
             dispatchDragEvent(0);
         }
     }
